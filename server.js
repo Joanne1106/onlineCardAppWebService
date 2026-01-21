@@ -43,11 +43,67 @@ app.post('/addcard', async (req, res) => {
     const { card_name, card_pic } = req.body;
     try {
         let connection = await mysql.createConnection(dbConfig);
-        await connection.execute('INSERT INTO cards (card_name, card_pic) VALUES (?, ?)', [card_name, card_pic]);
+        await connection.execute('INSERT INTO defaultdb.cards (card_name, card_pic) VALUES (?, ?)', [card_name, card_pic]);
         res.status(201).json({message: 'Card ' +card_name + ' added successfully' });
     } catch (err) {
         console.error(err);
         res.status(500).json({message: 'Server error - could not add card ' +card_name });
     }
 });
+
+// Route: Update a card
+app.put('/editcard/:id', async (req, res) => {
+    const { id } = req.params;
+    const { card_name, card_pic } = req.body;
+
+    if (card_name === undefined && card_pic === undefined) {
+        return res.status(400).json({ message: 'Nothing to update' });
+    }
+
+    try {
+        let connection = await mysql.createConnection(dbConfig);
+
+        const [result] = await connection.execute(
+            'UPDATE defaultdb.cards SET card_name = ?, card_pic = ? WHERE id = ?',
+            [card_name, card_pic, id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Card not found' });
+        }
+
+        res.json({ message: 'Card id ' + id + ' updated successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            message: 'Server error - could not update card id ' + id
+        });
+    }
+});
+
+// Route: Delete a card
+app.delete('/deletecard/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        let connection = await mysql.createConnection(dbConfig);
+
+        const [result] = await connection.execute(
+            'DELETE FROM defaultdb.cards WHERE id = ?',
+            [id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Card not found' });
+        }
+
+        res.json({ message: 'Card id ' + id + ' deleted successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            message: 'Server error - could not delete card id ' + id
+        });
+    }
+});
+
 
